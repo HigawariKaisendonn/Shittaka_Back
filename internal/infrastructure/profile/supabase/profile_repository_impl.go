@@ -64,8 +64,8 @@ func (r *ProfileRepositoryImpl) GetByID(ctx context.Context, id string) (*entiti
 // Create は新しいプロフィールを作成
 func (r *ProfileRepositoryImpl) Create(ctx context.Context, profile *entities.Profile) (*entities.Profile, error) {
 	profileData := map[string]interface{}{
-		"id":   profile.ID,
-		"name": profile.Name,
+		"id":       profile.ID,
+		"Username": profile.Name,
 	}
 
 	jsonData, err := json.Marshal(profileData)
@@ -115,7 +115,7 @@ func (r *ProfileRepositoryImpl) Create(ctx context.Context, profile *entities.Pr
 // Update はプロフィールを更新
 func (r *ProfileRepositoryImpl) Update(ctx context.Context, profile *entities.Profile) error {
 	profileData := map[string]interface{}{
-		"name": profile.Name,
+		"Username": profile.Name,
 	}
 
 	jsonData, err := json.Marshal(profileData)
@@ -156,7 +156,7 @@ func (r *ProfileRepositoryImpl) Update(ctx context.Context, profile *entities.Pr
 func mapToProfile(m map[string]interface{}) *entities.Profile {
 	return &entities.Profile{
 		ID:   getString(m, "id"),
-		Name: getString(m, "name"),
+		Name: getString(m, "Username"),
 	}
 }
 
