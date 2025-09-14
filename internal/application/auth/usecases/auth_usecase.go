@@ -47,6 +47,17 @@ func (u *AuthUsecase) SignOut(ctx context.Context, token string) error {
 	return u.authService.SignOut(ctx, token)
 }
 
+// GetCurrentUser は現在のユーザー情報を取得するユースケース
+func (u *AuthUsecase) GetCurrentUser(ctx context.Context, token string) (*dto.UserDTO, error) {
+	user, err := u.authService.GetCurrentUser(ctx, token)
+	if err != nil {
+		return nil, err
+	}
+
+	userDTO := u.toUserDTO(user)
+	return &userDTO, nil
+}
+
 // toAuthResponse はドメインのAuthResultをDTOに変換
 func (u *AuthUsecase) toAuthResponse(authResult *repositories.AuthResult) *dto.AuthResponse {
 	return &dto.AuthResponse{

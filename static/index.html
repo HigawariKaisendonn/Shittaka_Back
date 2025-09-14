@@ -46,6 +46,11 @@
         <button type="submit">ログイン</button>
     </form>
 
+    <!-- ユーザー情報表示エリア -->
+    <div id="userInfo" style="display: none; margin-top: 15px; padding: 10px; background: #e7f3ff; border: 1px solid #bee5eb; border-radius: 5px;">
+        <p style="margin: 0; font-weight: bold; color: #0c5460;">ログイン中: <span id="currentUsername"></span></p>
+    </div>
+
     <h2>ジャンル作成</h2>
     <form id="genreForm">
         <div class="form-group">
@@ -165,12 +170,70 @@
     <script>
         const API_BASE = 'http://localhost:8088/api/auth';
         let authToken = null;
+        let currentUser = null; // 現在のユーザー情報
         let choiceCount = 2; // 初期選択肢数
 
         // ページ読み込み時にジャンルを取得
         document.addEventListener('DOMContentLoaded', function() {
             loadGenres();
         });
+
+        // 現在のユーザー情報を取得する関数
+        async function getCurrentUser() {
+            if (!authToken) {
+                return null;
+            }
+
+            try {
+                console.log('現在のユーザー情報取得リクエスト送信');
+                const response = await fetch(`${API_BASE}/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                console.log('ユーザー情報レスポンス受信:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok
+                });
+
+                if (response.ok) {
+                    const user = await response.json();
+                    console.log('ユーザー情報:', user);
+                    currentUser = user;
+                    displayUserInfo(user);
+                    return user;
+                } else {
+                    const errorData = await response.json();
+                    console.error('ユーザー情報取得エラー:', errorData);
+                    hideUserInfo();
+                    return null;
+                }
+            } catch (error) {
+                console.error('ユーザー情報取得通信エラー:', error);
+                hideUserInfo();
+                return null;
+            }
+        }
+
+        // ユーザー情報を表示する関数
+        function displayUserInfo(user) {
+            const userInfoDiv = document.getElementById('userInfo');
+            const usernameSpan = document.getElementById('currentUsername');
+
+            usernameSpan.textContent = user.username || user.email;
+            userInfoDiv.style.display = 'block';
+        }
+
+        // ユーザー情報を非表示にする関数
+        function hideUserInfo() {
+            const userInfoDiv = document.getElementById('userInfo');
+            userInfoDiv.style.display = 'none';
+            currentUser = null;
+        }
 
         // ジャンル一覧を取得してドロップダウンに設定
         async function loadGenres() {
@@ -398,6 +461,9 @@
                 if (response.ok) {
                     authToken = result.token;
                     showResult(`ログイン成功！<br>トークン: ${result.token.substring(0, 20)}...<br>ユーザー: ${result.user.email}`);
+
+                    // ログイン成功後、ユーザー情報を取得して表示
+                    await getCurrentUser();
                 } else {
                     showResult(`ログインエラー (${response.status}): ${result.message || result.error}<br>詳細: ${JSON.stringify(result)}`, true);
                 }

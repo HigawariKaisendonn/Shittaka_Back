@@ -191,6 +191,51 @@ func (r *UserRepositoryImpl) Logout(ctx context.Context, token string) error {
 	return clientWithToken.Logout()
 }
 
+// GetCurrentUser はアクセストークンから現在のユーザー情報を取得
+func (r *UserRepositoryImpl) GetCurrentUser(ctx context.Context, token string) (*entities.User, error) {
+	authURL := os.Getenv("SUPABASE_URL") + "/auth/v1/user"
+	httpReq, err := http.NewRequestWithContext(ctx, "GET", authURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	httpReq.Header.Set("apikey", os.Getenv("SUPABASE_SERVICE_ROLE_KEY"))
+	httpReq.Header.Set("Authorization", "Bearer "+token)
+
+	client := &http.Client{}
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get user info with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var supabaseResp map[string]interface{}
+	if err := json.Unmarshal(body, &supabaseResp); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	// user_metadataからusernameを取得
+	userMetadata := getMap(supabaseResp, "user_metadata")
+	username := getString(userMetadata, "username")
+
+	user := entities.NewUser(
+		getString(supabaseResp, "id"),
+		getString(supabaseResp, "email"),
+		username,
+	)
+
+	return user, nil
+}
+
 // ヘルパー関数
 
 // getString は map から文字列を安全に取得
