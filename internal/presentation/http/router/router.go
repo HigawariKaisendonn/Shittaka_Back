@@ -10,7 +10,7 @@ import (
 )
 
 // SetupRoutes はルーティングを設定
-func SetupRoutes(authHandler *handlers.AuthHandler, genreHandler *handlers.GenreHandler, questionHandler *handlers.QuestionHandler, answerHandler *handlers.AnswerHandler, choiceHandler *handlers.ChoiceHandler) *http.ServeMux {
+func SetupRoutes(authHandler *handlers.AuthHandler, profileHandler *handlers.ProfileHandler, genreHandler *handlers.GenreHandler, questionHandler *handlers.QuestionHandler, answerHandler *handlers.AnswerHandler, choiceHandler *handlers.ChoiceHandler) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	// 認証関連のエンドポイント
@@ -19,6 +19,26 @@ func SetupRoutes(authHandler *handlers.AuthHandler, genreHandler *handlers.Genre
 	mux.HandleFunc("/api/auth/logout", middleware.CORS(authHandler.LogoutHandler))
 	mux.HandleFunc("/api/auth/me", middleware.CORS(authHandler.GetCurrentUserHandler))
 	mux.HandleFunc("/api/auth/test", middleware.CORS(authHandler.TestConnectionHandler))
+
+	// プロフィール関連のエンドポイント
+	mux.HandleFunc("/api/profiles/", middleware.CORS(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			profileHandler.GetProfileHandler(w, r)
+		case "PUT":
+			profileHandler.UpdateProfileHandler(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	}))
+	mux.HandleFunc("/api/profiles", middleware.CORS(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			profileHandler.CreateProfileHandler(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	}))
 
 	// ジャンル関連のエンドポイント
 	mux.HandleFunc("/api/genres", middleware.CORS(func(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +67,7 @@ func SetupRoutes(authHandler *handlers.AuthHandler, genreHandler *handlers.Genre
 		switch r.Method {
 		case http.MethodGet:
 			questionHandler.GetQuestionHandler(w, r)
-		case http.MethodPut:
+		case "PUT":
 			questionHandler.UpdateQuestionHandler(w, r)
 		case http.MethodDelete:
 			questionHandler.DeleteQuestionHandler(w, r)

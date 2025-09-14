@@ -48,7 +48,8 @@
 
     <!-- ユーザー情報表示エリア -->
     <div id="userInfo" style="display: none; margin-top: 15px; padding: 10px; background: #e7f3ff; border: 1px solid #bee5eb; border-radius: 5px;">
-        <p style="margin: 0; font-weight: bold; color: #0c5460;">ログイン中: <span id="currentUsername"></span></p>
+        <p style="margin: 0; font-weight: bold; color: #0c5460; display: inline;">ログイン中: <span id="currentUsername"></span></p>
+        <button id="logoutBtn" onclick="logout()" style="margin-left: 15px; padding: 5px 10px; background: #dc3545; color: white; border: none; cursor: pointer; border-radius: 3px; font-size: 0.9em;">ログアウト</button>
     </div>
 
     <h2>ジャンル作成</h2>
@@ -227,30 +228,26 @@
             }
 
             try {
-                // 一時的にJWTトークンでuser情報を取得
-                // 本来はプロフィール専用のAPIが必要だが、既存の/meエンドポイントを活用
-                const response = await fetch(`${API_BASE}/me`, {
+                // 新しいprofileエンドポイントを使用
+                const response = await fetch(`http://localhost:8088/api/profiles/${userId}`, {
                     method: 'GET',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
+                        'Content-Type': 'application/json'
                     }
                 });
 
                 if (response.ok) {
-                    const user = await response.json();
-                    // 現在のユーザーと同じIDの場合のみキャッシュ
-                    if (user.id === userId) {
-                        if (!window.userCache) window.userCache = {};
-                        window.userCache[userId] = user.username || user.email;
-                        return user.username || user.email;
-                    }
+                    const profile = await response.json();
+                    // キャッシュに保存
+                    if (!window.userCache) window.userCache = {};
+                    window.userCache[userId] = profile.name;
+                    return profile.name;
                 }
             } catch (error) {
                 console.error('ユーザー名取得エラー:', error);
             }
 
-            // エラーまたはIDが異なる場合はIDを返す
+            // エラーの場合はIDを返す
             return userId;
         }
 
@@ -268,6 +265,55 @@
             const userInfoDiv = document.getElementById('userInfo');
             userInfoDiv.style.display = 'none';
             currentUser = null;
+        }
+
+        // ログアウト処理
+        async function logout() {
+            if (!authToken) {
+                showResult('ログイン状態ではありません', true);
+                return;
+            }
+
+            try {
+                console.log('ログアウトリクエスト送信');
+                const response = await fetch(`${API_BASE}/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                console.log('ログアウトレスポンス受信:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok
+                });
+
+                if (response.ok) {
+                    // ログアウト成功
+                    authToken = null;
+                    currentUser = null;
+                    hideUserInfo();
+
+                    // キャッシュをクリア
+                    if (window.userCache) {
+                        window.userCache = {};
+                    }
+
+                    const result = await response.json();
+                    showResult(`ログアウトしました: ${result.message || 'ログアウト成功'}`);
+
+                    console.log('ログアウト成功');
+                } else {
+                    const errorData = await response.json();
+                    console.error('ログアウトエラー:', errorData);
+                    showResult(`ログアウトエラー (${response.status}): ${errorData.message || errorData.error}`, true);
+                }
+            } catch (error) {
+                console.error('ログアウト通信エラー:', error);
+                showResult(`ログアウト通信エラー: ${error.message}`, true);
+            }
         }
 
         // ジャンル一覧を取得してドロップダウンに設定
