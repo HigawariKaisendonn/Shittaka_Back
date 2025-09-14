@@ -33,96 +33,6 @@ curl https://shittaka-back.fly.dev/health
 - 問題削除
 
 ---
-## 開発者用セットアップ
-
-### 1. 依存関係のインストール
-
-```bash
-go mod tidy
-```
-
-### 2. 環境変数の設定
-
-`env.example`を参考に`.env`ファイルを作成し、Supabaseの設定を行ってください：
-
-```bash
-cp env.example .env
-```
-
-`.env`ファイルに以下の情報を設定：
-
-```env
-# Supabase設定
-SUPABASE_URL=https://your-project-id.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
-SUPABASE_ANON_KEY=your-anon-key-here
-SUPABASE_JWT_KEY=your-anon-jwt-here
-
-# サーバー設定
-PORT=8088
-APP_ENV=developmenL
-
-# 開発環境用の設定
-GIN_MODE=debug
-```
-
-### 3. Supabaseプロジェクトの設定
-
-1. [Supabase](https://supabase.com)でプロジェクトを作成
-2. プロジェクト設定から以下を取得：
-   - Project URL (`SUPABASE_URL`)
-   - Service Role Key (`SUPABASE_SERVICE_ROLE_KEY`)
-
-
-
-### 5.接続テスト
-
-""の中をenvのものに置き換えてください
-
-```powershell
-# powershell
-$env:SUPABASE_URL = ".env参照"
-$env:SUPABASE_SERVICE_ROLE_KEY = ".env参照"
-$env:SUPABASE_ANON_KEY=".env参照"
-$env:PORT = "8088"
-
-# サーバーを起動
-./server.exe
-```
-
-```bash
-# bash
-export SUPABASE_URL=".env参照"
-export SUPABASE_SERVICE_ROLE_KEY=".env参照"
-export SUPABASE_ANON_KEY=".env参照"
-export  PORT="8088"
-```
-```
-# 実行
-go run cmd/server/main.go
-```
-
-
-```powershell
-# powershell
-# ヘルスチェック
-Invoke-WebRequest -Uri "http://localhost:8088/health" -Method GET
-
-# Supabase接続テスト
-Invoke-WebRequest -Uri "http://localhost:8088/api/auth/test" -Method GET
-```
-
-```bash
-# bash
-# ヘルスチェック
-curl -X GET "http://localhost:8088/health"
-
-# Supabase接続テスト
-curl -X GET "http://localhost:8088/api/auth/test"
-```
-
-
-
 
 ## API エンドポイント
 
@@ -174,7 +84,101 @@ curl -X GET "http://localhost:8088/api/auth/test"
   20. / - 静的ファイル配信
 
 
-## 使用例
+
+## 開発者用セットアップ
+
+### 1. 依存関係のインストール
+
+```bash
+go mod tidy
+```
+
+### 2. 環境変数の設定
+
+`env.example`を参考に`.env`ファイルを作成し、Supabaseの設定を行ってください：
+
+```bash
+cp env.example .env
+```
+
+`.env`ファイルに以下の情報を設定：
+
+```env
+# Supabase設定
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+SUPABASE_ANON_KEY=your-anon-key-here
+SUPABASE_JWT_KEY=your-anon-jwt-here
+
+# サーバー設定
+PORT=8088
+APP_ENV=developmenL
+
+# 開発環境用の設定
+GIN_MODE=debug
+```
+
+### 3. Supabaseプロジェクトの設定
+
+1. [Supabase](https://supabase.com)でプロジェクトを作成
+2. プロジェクト設定から以下を取得：
+   - Project URL (`SUPABASE_URL`)
+   - Service Role Key (`SUPABASE_SERVICE_ROLE_KEY`)
+
+
+
+### 5.接続テスト(ローカル)
+
+""の中をenvのものに置き換えてください
+
+```powershell
+# powershell
+$env:SUPABASE_URL = ".env参照"
+$env:SUPABASE_SERVICE_ROLE_KEY = ".env参照"
+$env:SUPABASE_ANON_KEY=".env参照"
+$env:PORT = "8088"
+
+# サーバーを起動
+./server.exe
+```
+
+```bash
+# bash
+export SUPABASE_URL=".env参照"
+export SUPABASE_SERVICE_ROLE_KEY=".env参照"
+export SUPABASE_ANON_KEY=".env参照"
+export  PORT="8088"
+```
+```
+# 実行
+go run cmd/server/main.go
+```
+
+
+```powershell
+# powershell
+# ヘルスチェック
+Invoke-WebRequest -Uri "http://localhost:8088/health" -Method GET
+
+# Supabase接続テスト
+Invoke-WebRequest -Uri "http://localhost:8088/api/auth/test" -Method GET
+```
+
+```bash
+# bash
+# ヘルスチェック
+curl -X GET "http://localhost:8088/health"
+
+# Supabase接続テスト
+curl -X GET "http://localhost:8088/api/auth/test"
+```
+
+
+
+
+
+
+## API使用例(ローカル)
 
 ### ユーザー登録
 
@@ -199,86 +203,3 @@ curl -X POST http://localhost:8088/api/auth/login \
   }'
 ```
 
-
-
-
-## 開発
-
-### プロジェクト構造
-
-
-```
-│  .env
-│  .gitignore
-│  env.example
-│  go.mod
-│  go.sum
-│  README.md
-│  server.exe
-│
-├─.claude
-│      settings.local.json
-│
-├─.vscode
-├─cmd
-│  └─server
-│          main.go
-│
-├─internal
-│  ├─application
-│  │  └─auth
-│  │      ├─dto
-│  │      │      auth_dto.go
-│  │      │
-│  │      └─usecases
-│  │              auth_usecase.go
-│  │
-│  ├─domain
-│  │  ├─auth
-│  │  │  ├─entities
-│  │  │  │      user.go
-│  │  │  │
-│  │  │  ├─repositories
-│  │  │  │      user_repository.go
-│  │  │  │
-│  │  │  └─services
-│  │  │          auth_service.go
-│  │  │
-│  │  └─shared
-│  │          errors.go
-│  │
-│  ├─infrastructure
-│  │  ├─auth
-│  │  │  └─supabase
-│  │  │          user_repository_impl.go
-│  │  │
-│  │  ├─config
-│  │  │      config.go
-│  │  │
-│  │  ├─database
-│  │  └─di
-│  │          container.go
-│  │
-│  └─presentation
-│      ├─dto
-│      │      auth_dto.go
-│      │
-│      └─http
-│          ├─handlers
-│          │      auth_handler.go
-│          │
-│          ├─middleware
-│          │      cors.go
-│          │
-│          └─router
-│                  router.go
-│
-└─static
-        index.html
-
-```
-
-### 依存関係
-
-- `github.com/supabase-community/gotrue-go` - Supabase認証クライアント
-- `github.com/joho/godotenv` - 環境変数管理
