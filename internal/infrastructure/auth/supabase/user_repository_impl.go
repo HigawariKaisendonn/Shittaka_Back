@@ -187,8 +187,36 @@ func (r *UserRepositoryImpl) Delete(ctx context.Context, id string) error {
 
 // Logout はユーザーをログアウトさせる
 func (r *UserRepositoryImpl) Logout(ctx context.Context, token string) error {
-	clientWithToken := r.client.WithToken(token)
-	return clientWithToken.Logout()
+	baseURL := os.Getenv("SUPABASE_URL")
+	baseURL = strings.TrimSuffix(baseURL, "/")
+	authURL := baseURL + "/auth/v1/logout"
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", authURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	httpReq.Header.Set("apikey", os.Getenv("SUPABASE_ANON_KEY"))
+	httpReq.Header.Set("Authorization", "Bearer "+token)
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	httpClient := &http.Client{}
+	resp, err := httpClient.Do(httpReq)
+	if err != nil {
+		return fmt.Errorf("failed to execute request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("logout failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
 }
 
 // GetCurrentUser はアクセストークンから現在のユーザー情報を取得
