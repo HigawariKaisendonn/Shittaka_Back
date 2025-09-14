@@ -219,6 +219,41 @@
             }
         }
 
+        // UserIDからユーザー名を取得する関数
+        async function getUsernameByUserId(userId) {
+            // キャッシュ機能付き
+            if (window.userCache && window.userCache[userId]) {
+                return window.userCache[userId];
+            }
+
+            try {
+                // 一時的にJWTトークンでuser情報を取得
+                // 本来はプロフィール専用のAPIが必要だが、既存の/meエンドポイントを活用
+                const response = await fetch(`${API_BASE}/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const user = await response.json();
+                    // 現在のユーザーと同じIDの場合のみキャッシュ
+                    if (user.id === userId) {
+                        if (!window.userCache) window.userCache = {};
+                        window.userCache[userId] = user.username || user.email;
+                        return user.username || user.email;
+                    }
+                }
+            } catch (error) {
+                console.error('ユーザー名取得エラー:', error);
+            }
+
+            // エラーまたはIDが異なる場合はIDを返す
+            return userId;
+        }
+
         // ユーザー情報を表示する関数
         function displayUserInfo(user) {
             const userInfoDiv = document.getElementById('userInfo');
@@ -642,15 +677,19 @@
                     questionsDiv.style.display = 'block';
                     questionsDiv.style.backgroundColor = '#d4edda';
                     questionsDiv.style.color = '#155724';
-                    
+
                     if (Array.isArray(result) && result.length > 0) {
                         let questionsHtml = '<h3>問題一覧:</h3>';
-                        result.forEach(q => {
+
+                        // 各問題に対して投稿者名を取得
+                        for (const q of result) {
+                            const username = await getUsernameByUserId(q.user_id);
+
                             questionsHtml += `
                                 <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
                                     <h4>${q.title} (ID: ${q.id})</h4>
                                     <p><strong>ジャンルID:</strong> ${q.genre_id}</p>
-                                    <p><strong>投稿者:</strong> ${q.user_id}</p>
+                                    <p><strong>投稿者:</strong> ${username}</p>
                                     <p><strong>問題文:</strong> ${q.body || '未設定'}</p>
                                     <p><strong>解説:</strong> ${q.explanation || '未設定'}</p>
                                     <p><strong>閲覧数:</strong> ${q.views} | <strong>正解数:</strong> ${q.correct_count} | <strong>不正解数:</strong> ${q.incorrect_count}</p>
@@ -662,7 +701,7 @@
                                     </div>
                                 </div>
                             `;
-                        });
+                        }
                         questionsDiv.innerHTML = questionsHtml;
                     } else {
                         questionsDiv.innerHTML = '<h3>問題が見つかりません</h3>';
