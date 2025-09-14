@@ -21,7 +21,7 @@ curl https://shittaka-back.fly.dev/health
 ## WebサイトURL
 
 ```
-https://shittakakeijibanfront-jj4fxnwwo-omochinohoshis-projects.vercel.app
+https://shittakakeijibanfront-web.vercel.app
 ```
 
 フロント側とのリポジトリにも書いています
