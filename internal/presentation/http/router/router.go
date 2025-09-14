@@ -17,6 +17,7 @@ func SetupRoutes(authHandler *handlers.AuthHandler, genreHandler *handlers.Genre
 	mux.HandleFunc("/api/auth/signup", middleware.CORS(authHandler.SignupHandler))
 	mux.HandleFunc("/api/auth/login", middleware.CORS(authHandler.LoginHandler))
 	mux.HandleFunc("/api/auth/logout", middleware.CORS(authHandler.LogoutHandler))
+	mux.HandleFunc("/api/auth/me", middleware.CORS(authHandler.GetCurrentUserHandler))
 	mux.HandleFunc("/api/auth/test", middleware.CORS(authHandler.TestConnectionHandler))
 
 	// ジャンル関連のエンドポイント

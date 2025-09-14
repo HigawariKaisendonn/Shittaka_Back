@@ -30,6 +30,9 @@ type UserRepository interface {
 
 	// Logout はユーザーをログアウトさせる
 	Logout(ctx context.Context, token string) error
+
+	// GetCurrentUser はアクセストークンから現在のユーザー情報を取得
+	GetCurrentUser(ctx context.Context, token string) (*entities.User, error)
 }
 
 // AuthResult は認証結果を表す

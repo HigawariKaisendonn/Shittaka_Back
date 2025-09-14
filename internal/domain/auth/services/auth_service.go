@@ -4,6 +4,7 @@ package services
 // ドメインサービスとは、ドメイン層のロジックを実装する
 
 import (
+	"Shittaka_back/internal/domain/auth/entities"
 	"Shittaka_back/internal/domain/auth/repositories"
 	"Shittaka_back/internal/domain/shared"
 	"context"
@@ -83,6 +84,25 @@ func (s *AuthService) SignOut(ctx context.Context, token string) error {
 	}
 
 	return s.userRepo.Logout(ctx, token)
+}
+
+// GetCurrentUser はアクセストークンから現在のユーザー情報を取得
+func (s *AuthService) GetCurrentUser(ctx context.Context, token string) (*entities.User, error) {
+	if token == "" {
+		return nil, shared.NewValidationError("token", "token is required")
+	}
+
+	// "Bearer " プレフィックスを除去
+	if len(token) > 7 && token[:7] == "Bearer " {
+		token = token[7:]
+	}
+
+	user, err := s.userRepo.GetCurrentUser(ctx, token)
+	if err != nil {
+		return nil, shared.NewDomainError("AUTH_FAILED", "invalid or expired token")
+	}
+
+	return user, nil
 }
 
 // validateSignUpInput はサインアップ入力をバリデート

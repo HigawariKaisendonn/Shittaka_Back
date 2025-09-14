@@ -131,6 +131,35 @@ func (h *AuthHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Logged out successfully"})
 }
 
+// GetCurrentUserHandler は現在ログイン中のユーザー情報を取得
+func (h *AuthHandler) GetCurrentUserHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		h.sendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	token := r.Header.Get("Authorization")
+	if token == "" {
+		h.sendError(w, "Authorization token required", http.StatusUnauthorized)
+		return
+	}
+
+	user, err := h.authUsecase.GetCurrentUser(r.Context(), token)
+	if err != nil {
+		h.handleUsecaseError(w, err)
+		return
+	}
+
+	// レスポンスDTOに変換
+	response := presentationDTO.UserDTO{
+		ID:       user.ID,
+		Email:    user.Email,
+		Username: user.Username,
+	}
+
+	h.sendJSON(w, response, http.StatusOK)
+}
+
 // TestConnectionHandler はSupabaseとの接続テストを行う
 func (h *AuthHandler) TestConnectionHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
