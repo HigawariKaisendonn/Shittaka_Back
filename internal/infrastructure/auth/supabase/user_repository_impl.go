@@ -223,17 +223,59 @@ func (r *UserRepositoryImpl) GetCurrentUser(ctx context.Context, token string) (
 		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	// user_metadataからusernameを取得
-	userMetadata := getMap(supabaseResp, "user_metadata")
-	username := getString(userMetadata, "username")
+	userID := getString(supabaseResp, "id")
+	email := getString(supabaseResp, "email")
 
-	user := entities.NewUser(
-		getString(supabaseResp, "id"),
-		getString(supabaseResp, "email"),
-		username,
-	)
+	// profilesテーブルからnameを取得
+	username, err := r.getProfileName(ctx, userID)
+	if err != nil {
+		// profilesテーブルからの取得に失敗した場合はuser_metadataから取得
+		userMetadata := getMap(supabaseResp, "user_metadata")
+		username = getString(userMetadata, "username")
+	}
+
+	user := entities.NewUser(userID, email, username)
 
 	return user, nil
+}
+
+// getProfileName はprofilesテーブルからnameを取得
+func (r *UserRepositoryImpl) getProfileName(ctx context.Context, userID string) (string, error) {
+	url := fmt.Sprintf("%s/rest/v1/profiles?id=eq.%s&select=name", os.Getenv("SUPABASE_URL"), userID)
+	httpReq, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+
+	httpReq.Header.Set("apikey", os.Getenv("SUPABASE_ANON_KEY"))
+	httpReq.Header.Set("Authorization", "Bearer "+os.Getenv("SUPABASE_ANON_KEY"))
+
+	client := &http.Client{}
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return "", fmt.Errorf("failed to execute request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("failed to get profile with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var profileList []map[string]interface{}
+	if err := json.Unmarshal(body, &profileList); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	if len(profileList) == 0 {
+		return "", fmt.Errorf("profile not found")
+	}
+
+	return getString(profileList[0], "name"), nil
 }
 
 // ヘルパー関数
