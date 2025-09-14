@@ -7,6 +7,7 @@ Go言語で構築されたSupabase認証システムのバックエンドAPIで�
 - ユーザー登録（サインアップ）
 - ユーザーログイン
 - ユーザーログアウト
+- ユーザーネームを取得
 - Supabaseとの疎通テスト
 - CORS対応
 - ジャンル全取得
@@ -118,7 +119,8 @@ curl -X GET "http://localhost:8088/api/auth/test"
   1. POST /api/auth/signup - ユーザー登録
   2. POST /api/auth/login - ユーザーログイン
   3. POST /api/auth/logout - ユーザーログアウト
-  4. GET /api/auth/test - Supabase接続テスト
+  4. GET /api/auth/me - ログイン中のユーザーネームを取得する
+  5. GET /api/auth/test - Supabase接続テスト
 
   ジャンル関連 (Genre Handler)
 
