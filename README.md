@@ -119,8 +119,11 @@ curl -X GET "http://localhost:8088/api/auth/test"
   1. POST /api/auth/signup - ユーザー登録
   2. POST /api/auth/login - ユーザーログイン
   3. POST /api/auth/logout - ユーザーログアウト
-  4. GET /api/auth/me - uuidからユーザーネームを取得する
   5. GET /api/auth/test - Supabase接続テスト
+
+   プロフィール関連（Profiles Handler）
+
+  6. GET /api/profiles/{user_id}
 
   ジャンル関連 (Genre Handler)
 
