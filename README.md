@@ -18,6 +18,14 @@ curl https://shittaka-back.fly.dev/health
 {"status": "ok"}
 というレスポンスが帰ってきたらデプロイしている状態です。
 
+## WebサイトURL
+
+```
+https://shittakakeijibanfront-jj4fxnwwo-omochinohoshis-projects.vercel.app
+```
+
+フロント側とのリポジトリにも書いています
+
 ## 機能
 
 - ユーザー登録（サインアップ）
