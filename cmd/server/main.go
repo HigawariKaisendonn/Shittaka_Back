@@ -12,20 +12,20 @@ import (
 
 func main() {
 	// DIコンテナを初期化
-	authContainer := di.NewContainer()
+	container := di.NewContainer()
 	genreHandler := di.NewGenreHandler()
 	questionHandler := di.NewQuestionHandler()
 	answerHandler := di.NewAnswerHandler()
 	choiceHandler := di.NewChoiceHandler()
 
-	log.Printf("Server starting on port %s", authContainer.Config.Port)
-	log.Printf("Supabase URL: %s", authContainer.Config.SupabaseURL)
+	log.Printf("Server starting on port %s", container.Config.Port)
+	log.Printf("Supabase URL: %s", container.Config.SupabaseURL)
 
 	// ルーターを設定
-	mux := router.SetupRoutes(authContainer.AuthHandler, genreHandler, questionHandler, answerHandler, choiceHandler)
+	mux := router.SetupRoutes(container.AuthHandler, container.ProfileHandler, genreHandler, questionHandler, answerHandler, choiceHandler)
 
 	// サーバーを起動
-	if err := http.ListenAndServe(":"+authContainer.Config.Port, mux); err != nil {
+	if err := http.ListenAndServe(":"+container.Config.Port, mux); err != nil {
 		log.Fatal("Server failed to start:", err)
 	}
 }

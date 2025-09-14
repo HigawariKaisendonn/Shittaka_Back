@@ -228,30 +228,26 @@
             }
 
             try {
-                // 一時的にJWTトークンでuser情報を取得
-                // 本来はプロフィール専用のAPIが必要だが、既存の/meエンドポイントを活用
-                const response = await fetch(`${API_BASE}/me`, {
+                // 新しいprofileエンドポイントを使用
+                const response = await fetch(`http://localhost:8088/api/profiles/${userId}`, {
                     method: 'GET',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
+                        'Content-Type': 'application/json'
                     }
                 });
 
                 if (response.ok) {
-                    const user = await response.json();
-                    // 現在のユーザーと同じIDの場合のみキャッシュ
-                    if (user.id === userId) {
-                        if (!window.userCache) window.userCache = {};
-                        window.userCache[userId] = user.username || user.email;
-                        return user.username || user.email;
-                    }
+                    const profile = await response.json();
+                    // キャッシュに保存
+                    if (!window.userCache) window.userCache = {};
+                    window.userCache[userId] = profile.name;
+                    return profile.name;
                 }
             } catch (error) {
                 console.error('ユーザー名取得エラー:', error);
             }
 
-            // エラーまたはIDが異なる場合はIDを返す
+            // エラーの場合はIDを返す
             return userId;
         }
 
