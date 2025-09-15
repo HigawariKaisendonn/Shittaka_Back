@@ -162,14 +162,15 @@
         <button type="submit">回答を投稿</button>
     </form>
 
-    <h2>問題一覧</h2>
+    <h2>問題一覧（選択肢付き）</h2>
     <button id="loadQuestionsBtn">問題一覧を取得</button>
     <div id="questionsList" class="result" style="display: none;"></div>
 
     <div id="result" class="result" style="display: none;"></div>
 
     <script>
-        const API_BASE = 'http://localhost:8088/api/auth';
+        const BASE_URL = 'https://shittaka-back.fly.dev';
+        const API_BASE = `${BASE_URL}/api/auth`;
         let authToken = null;
         let currentUser = null; // 現在のユーザー情報
         let choiceCount = 2; // 初期選択肢数
@@ -229,7 +230,7 @@
 
             try {
                 // 新しいprofileエンドポイントを使用
-                const response = await fetch(`http://localhost:8088/api/profiles/${userId}`, {
+                const response = await fetch(`${BASE_URL}/api/profiles/${userId}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json'
@@ -320,7 +321,7 @@
         async function loadGenres() {
             try {
                 console.log('ジャンル一覧取得リクエスト送信');
-                const response = await fetch('http://localhost:8088/api/genres', {
+                const response = await fetch(`${BASE_URL}/api/genres`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json'
@@ -568,7 +569,7 @@
 
             try {
                 console.log('ジャンル作成リクエスト送信:', data);
-                const response = await fetch('http://localhost:8088/api/genres', {
+                const response = await fetch(`${BASE_URL}/api/genres`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -615,7 +616,7 @@
 
             try {
                 console.log('問題作成リクエスト送信:', data);
-                const response = await fetch('http://localhost:8088/api/questions', {
+                const response = await fetch(`${BASE_URL}/api/questions`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -665,7 +666,7 @@
 
                     try {
                         console.log(`選択肢${i+1}作成リクエスト送信:`, choiceData);
-                        const choiceResponse = await fetch('http://localhost:8088/api/choices/create', {
+                        const choiceResponse = await fetch(`${BASE_URL}/api/choices/create`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -699,10 +700,35 @@
             }
         }
 
+        // 特定の問題の選択肢を取得する関数
+        async function getChoicesForQuestion(questionId) {
+            try {
+                console.log(`問題ID ${questionId} の選択肢取得リクエスト送信`);
+                const response = await fetch(`${BASE_URL}/api/choices/${questionId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log(`問題ID ${questionId} の選択肢取得成功:`, result);
+                    return result.choices || [];
+                } else {
+                    console.error(`選択肢取得エラー (${response.status}):`, await response.text());
+                    return [];
+                }
+            } catch (error) {
+                console.error('選択肢取得通信エラー:', error);
+                return [];
+            }
+        }
+
         document.getElementById('loadQuestionsBtn').addEventListener('click', async () => {
             try {
                 console.log('問題一覧取得リクエスト送信');
-                const response = await fetch('http://localhost:8088/api/questions', {
+                const response = await fetch(`${BASE_URL}/api/questions`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json'
@@ -727,9 +753,22 @@
                     if (Array.isArray(result) && result.length > 0) {
                         let questionsHtml = '<h3>問題一覧:</h3>';
 
-                        // 各問題に対して投稿者名を取得
+                        // 各問題に対して投稿者名と選択肢を取得
                         for (const q of result) {
                             const username = await getUsernameByUserId(q.user_id);
+                            const choices = await getChoicesForQuestion(q.id);
+
+                            let choicesHtml = '';
+                            if (choices.length > 0) {
+                                choicesHtml = '<div style="margin-top: 10px;"><strong>選択肢:</strong><ul>';
+                                choices.forEach((choice, index) => {
+                                    const correctLabel = choice.is_correct ? ' <span style="color: #28a745; font-weight: bold;">[正解]</span>' : '';
+                                    choicesHtml += `<li onclick="fillAnswerFormWithChoice(${q.id}, ${choice.id})" style="cursor: pointer; padding: 5px; margin: 2px 0; background: #f8f9fa; border-radius: 3px; border: 1px solid #dee2e6;">${choice.text}${correctLabel} (ID: ${choice.id})</li>`;
+                                });
+                                choicesHtml += '</ul></div>';
+                            } else {
+                                choicesHtml = '<div style="margin-top: 10px; color: #dc3545;"><strong>選択肢:</strong> 選択肢が設定されていません</div>';
+                            }
 
                             questionsHtml += `
                                 <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
@@ -740,6 +779,7 @@
                                     <p><strong>解説:</strong> ${q.explanation || '未設定'}</p>
                                     <p><strong>閲覧数:</strong> ${q.views} | <strong>正解数:</strong> ${q.correct_count} | <strong>不正解数:</strong> ${q.incorrect_count}</p>
                                     <p><strong>作成日時:</strong> ${new Date(q.created_at).toLocaleString()}</p>
+                                    ${choicesHtml}
                                     <div style="margin-top: 10px;">
                                         <button onclick="fillAnswerForm(${q.id})" style="background: #28a745;">回答する</button>
                                         <button onclick="fillUpdateForm(${q.id}, '${q.title.replace(/'/g, "\\'")}', '${(q.body || '').replace(/'/g, "\\'")}', '${(q.explanation || '').replace(/'/g, "\\'")}')">編集フォームに入力</button>
@@ -779,7 +819,7 @@
 
             try {
                 console.log('問題更新リクエスト送信:', data);
-                const response = await fetch(`http://localhost:8088/api/questions/${questionId}`, {
+                const response = await fetch(`${BASE_URL}/api/questions/${questionId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -826,7 +866,7 @@
 
             try {
                 console.log('問題削除リクエスト送信:', { questionId });
-                const response = await fetch(`http://localhost:8088/api/questions/${questionId}`, {
+                const response = await fetch(`${BASE_URL}/api/questions/${questionId}`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
@@ -871,7 +911,7 @@
 
             try {
                 console.log('回答投稿リクエスト送信:', data);
-                const response = await fetch('http://localhost:8088/api/answers', {
+                const response = await fetch(`${BASE_URL}/api/answers`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -922,7 +962,15 @@
         function fillAnswerForm(questionId) {
             document.getElementById('answerQuestionId').value = questionId;
             document.getElementById('answerChoiceId').value = 1; // デフォルト値
-            
+
+            // 回答フォームにスクロール
+            document.getElementById('answerForm').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function fillAnswerFormWithChoice(questionId, choiceId) {
+            document.getElementById('answerQuestionId').value = questionId;
+            document.getElementById('answerChoiceId').value = choiceId;
+
             // 回答フォームにスクロール
             document.getElementById('answerForm').scrollIntoView({ behavior: 'smooth' });
         }
